@@ -60,7 +60,7 @@ def validateFiletype(url):
 		
 # pull down the content from the webpage
 html = urllib2.urlopen(url)
-soup = BeautifulSoup(html)
+soup = BeautifulSoup(html, 'lxml')
 
 # find all entries with the required class
 links = soup.findAll('a', href=True)
