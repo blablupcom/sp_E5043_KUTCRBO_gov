@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+#-*- coding: utf-8 -*-
 
 #### IMPORTS 1.0
 
@@ -11,8 +11,6 @@ from bs4 import BeautifulSoup
 
 
 #### FUNCTIONS 1.2
-import requests    # import requests to validate filetype
-
 
 def validateFilename(filename):
     filenameregex = '^[a-zA-Z0-9]+_[a-zA-Z0-9]+_[a-zA-Z0-9]+_[0-9][0-9][0-9][0-9]_[0-9QY][0-9]$'
@@ -40,31 +38,23 @@ def validateFilename(filename):
 
 def validateURL(url):
     try:
-        r = requests.get(url, allow_redirects=True, timeout=20)
-        soup = BeautifulSoup(r.text, 'lxml')
-        title = soup.find('meta', attrs={'property': 'og:title'})['content']
+        r = urllib2.urlopen(url)
         count = 1
-
-        while r.status_code == 500 and count < 4:
+        while r.getcode() == 500 and count < 4:
             print ("Attempt {0} - Status code: {1}. Retrying.".format(count, r.status_code))
             count += 1
-            r = requests.get(url, allow_redirects=True, timeout=20)
+            r = urllib2.urlopen(url)
         sourceFilename = r.headers.get('Content-Disposition')
         if sourceFilename:
             ext = os.path.splitext(sourceFilename)[1].replace('"', '').replace(';', '').replace(' ', '')
-        elif '.csv' in title:
-            ext = '.csv'
-        elif r.headers['Content-Type'] == 'text/csv':
-            ext = '.csv'
         else:
-            ext = os.path.splitext(url)[1]
-        validURL = r.status_code == 200
-        validFiletype = ext in ['.csv', '.xls', '.xlsx']
+            ext = os.path.splitext(url)[1].split('?')[0]
+        validURL = r.getcode() == 200
+        validFiletype = ext.lower() in ['.csv', '.xls', '.xlsx']
         return validURL, validFiletype
     except:
         print ("Error validating URL.")
         return False, False
-
 
 def validate(filename, file_url):
     validFilename = validateFilename(filename)
@@ -105,7 +95,7 @@ html = urllib2.urlopen(url)
 soup = BeautifulSoup(html, 'lxml')
 
 #### SCRAPE DATA
-
+import requests
 import json
 
 block = soup.find(text=re.compile('Items of spend over'))
@@ -115,6 +105,8 @@ soup15 = json.loads(html15.text)
 entries = soup15['feed']['entry']
 for entry in entries:
     url = entry['gsx$csvlink']['$t']
+    ids = url.split('id=')[-1]
+    url = 'https://docs.google.com/uc?authuser=0&id={}&export=dowload'.format(ids)
     csvYr = entry['gsx$year']['$t']
     csvMth = entry['gsx$month']['$t'][:3]
     csvMth = convert_mth_strings(csvMth.upper())
@@ -126,6 +118,8 @@ for link in links:
     url = link['href']
     if 'https://drive.google.com/file/d/' in url:
         title = link.contents[0]
+        ids = url.split('d/')[-1].split('/view')[0]
+        url = 'https://docs.google.com/uc?authuser=0&id={}&export=dowload'.format(ids)
         csvYr = title.split(' ')[-1]
         csvMth = title.split(' ')[-2][:3]
         csvMth = convert_mth_strings(csvMth.upper())
@@ -153,3 +147,4 @@ if errors > 0:
 
 
 #### EOF
+
