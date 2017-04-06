@@ -1,4 +1,4 @@
-#-*- coding: utf-8 -*-
+ #-*- coding: utf-8 -*-
 
 #### IMPORTS 1.0
 
@@ -107,6 +107,24 @@ for entry in entries:
     url = entry['gsx$csvlink']['$t']
     ids = url.split('id=')[-1]
     url = 'https://docs.google.com/uc?authuser=0&id={}&export=dowload'.format(ids)
+    if '181go' in ids:
+        url = 'https://spreadsheets.google.com/feeds/download/spreadsheets/Export?key=181go8X9Om36BHBWwpSB4OcLkjQHCYC0ReEYM2UvqMyQ&exportFormat=csv&gid=1634253498'
+    elif '1Hp25' in ids:
+        url = 'https://spreadsheets.google.com/feeds/download/spreadsheets/Export?key=1Hp25-mqSFOPOZR7c0uK6m9Or4cjKjZNc8-UWVjpy40U&exportFormat=csv&gid=1634253498'
+
+    csvYr = entry['gsx$year']['$t']
+    csvMth = entry['gsx$month']['$t'][:3]
+    csvMth = convert_mth_strings(csvMth.upper())
+    data.append([csvYr, csvMth, url])
+json_url = 'https://spreadsheets.google.com/feeds/list/1YjMnNvnyVt352vZCyD555Lhy9G1tberaUgGZs9ao8Ow/2/public/values?alt=json'
+html16 = requests.get(json_url)
+soup16 = json.loads(html16.text)
+entries = soup16['feed']['entry']
+for entry in entries:
+    url = entry['gsx$csvlink']['$t']
+    ids = url.split('id=')[-1]
+    url = 'https://docs.google.com/uc?authuser=0&id={}&export=dowload'.format(ids)
+
     csvYr = entry['gsx$year']['$t']
     csvMth = entry['gsx$month']['$t'][:3]
     csvMth = convert_mth_strings(csvMth.upper())
@@ -147,4 +165,3 @@ if errors > 0:
 
 
 #### EOF
-
