@@ -11,6 +11,8 @@ from bs4 import BeautifulSoup
 
 
 #### FUNCTIONS 1.2
+import requests  #  import requests for making a valid request
+headers = {'user-agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/62.0.3202.62 Safari/537.36'}
 
 def validateFilename(filename):
     filenameregex = '^[a-zA-Z0-9]+_[a-zA-Z0-9]+_[a-zA-Z0-9]+_[0-9][0-9][0-9][0-9]_[0-9QY][0-9]$'
@@ -38,18 +40,18 @@ def validateFilename(filename):
 
 def validateURL(url):
     try:
-        r = urllib2.urlopen(url)
+        r = requests.get(url, headers=headers)
         count = 1
-        while r.getcode() == 500 and count < 4:
+        while r.status_code == 500 and count < 4:
             print ("Attempt {0} - Status code: {1}. Retrying.".format(count, r.status_code))
             count += 1
-            r = urllib2.urlopen(url)
+            r = requests.get(url, headers=headers)
         sourceFilename = r.headers.get('Content-Disposition')
         if sourceFilename:
             ext = os.path.splitext(sourceFilename)[1].replace('"', '').replace(';', '').replace(' ', '')
         else:
             ext = os.path.splitext(url)[1].split('?')[0]
-        validURL = r.getcode() == 200
+        validURL = r.status_code == 200
         validFiletype = ext.lower() in ['.csv', '.xls', '.xlsx']
         return validURL, validFiletype
     except:
@@ -84,64 +86,30 @@ def convert_mth_strings ( mth_string ):
 #### VARIABLES 1.0
 
 entity_id = "E5043_KUTCRBO_gov"
-url = "http://data.kingston.gov.uk/Kingston_Open_Data/"
+url = "https://data.kingston.gov.uk/transparency-code/"
 errors = 0
 data = []
 
-#### READ HTML 1.0
+#### READ HTML 1.2
+import requests  #  import requests for making a valid request
 
-
-html = urllib2.urlopen(url)
-soup = BeautifulSoup(html, 'lxml')
+html = requests.get(url, headers=headers)
+soup = BeautifulSoup(html.text, 'lxml')
 
 #### SCRAPE DATA
-import requests
-import json
 
-block = soup.find(text=re.compile('Items of spend over'))
-json_url = 'https://spreadsheets.google.com/feeds/list/1YjMnNvnyVt352vZCyD555Lhy9G1tberaUgGZs9ao8Ow/1/public/values?alt=json'
-html15 = requests.get(json_url)
-soup15 = json.loads(html15.text)
-entries = soup15['feed']['entry']
-for entry in entries:
-    url = entry['gsx$csvlink']['$t']
-    ids = url.split('id=')[-1]
-    url = 'https://docs.google.com/uc?authuser=0&id={}&export=dowload'.format(ids)
-    if '181go' in ids:
-        url = 'https://spreadsheets.google.com/feeds/download/spreadsheets/Export?key=181go8X9Om36BHBWwpSB4OcLkjQHCYC0ReEYM2UvqMyQ&exportFormat=csv&gid=1634253498'
-    elif '1Hp25' in ids:
-        url = 'https://spreadsheets.google.com/feeds/download/spreadsheets/Export?key=1Hp25-mqSFOPOZR7c0uK6m9Or4cjKjZNc8-UWVjpy40U&exportFormat=csv&gid=1634253498'
-
-    csvYr = entry['gsx$year']['$t']
-    csvMth = entry['gsx$month']['$t'][:3]
-    csvMth = convert_mth_strings(csvMth.upper())
-    data.append([csvYr, csvMth, url])
-json_url = 'https://spreadsheets.google.com/feeds/list/1YjMnNvnyVt352vZCyD555Lhy9G1tberaUgGZs9ao8Ow/2/public/values?alt=json'
-html16 = requests.get(json_url)
-soup16 = json.loads(html16.text)
-entries = soup16['feed']['entry']
-for entry in entries:
-    url = entry['gsx$csvlink']['$t']
-    ids = url.split('id=')[-1]
-    url = 'https://docs.google.com/uc?authuser=0&id={}&export=dowload'.format(ids)
-
-    csvYr = entry['gsx$year']['$t']
-    csvMth = entry['gsx$month']['$t'][:3]
-    csvMth = convert_mth_strings(csvMth.upper())
-    data.append([csvYr, csvMth, url])
-links = block.find_all_next('a', href=True)
-for link in links:
-    if 'As at August 2015' in link.text:
-        continue
-    url = link['href']
-    if 'https://drive.google.com/file/d/' in url:
-        title = link.contents[0]
-        ids = url.split('d/')[-1].split('/view')[0]
-        url = 'https://docs.google.com/uc?authuser=0&id={}&export=dowload'.format(ids)
-        csvYr = title.split(' ')[-1]
-        csvMth = title.split(' ')[-2][:3]
-        csvMth = convert_mth_strings(csvMth.upper())
-        data.append([csvYr, csvMth, url])
+blocks = soup.find_all('h3', text=re.compile('Financial Year'))
+for block in blocks:
+    links = block.find_next('ul')
+    for link in links:
+        url = link.find('a')
+        if type(url) != int:
+            url = url['href']
+            link_text = link.find('a').text
+            csvYr = link_text.split()[-1]
+            csvMth = link_text.split()[0][:3]
+            csvMth = convert_mth_strings(csvMth.upper())
+            data.append([csvYr, csvMth, url])
 
 
 #### STORE DATA 1.0
@@ -165,3 +133,4 @@ if errors > 0:
 
 
 #### EOF
+
