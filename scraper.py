@@ -97,7 +97,7 @@ html = requests.get(url, headers=headers)
 soup = BeautifulSoup(html.text, 'lxml')
 
 #### SCRAPE DATA
-
+print soup
 blocks = soup.find_all('h3', text=re.compile('Financial Year'))
 for block in blocks:
     links = block.find_next('ul')
