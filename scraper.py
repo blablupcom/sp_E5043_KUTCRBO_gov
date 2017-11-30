@@ -12,7 +12,7 @@ from bs4 import BeautifulSoup
 
 #### FUNCTIONS 1.2
 import requests  #  import requests for making a valid request
-headers = {'user-agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/62.0.3202.62 Safari/537.36'}
+headers = {'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/62.0.3202.62 Safari/537.36'}
 
 def validateFilename(filename):
     filenameregex = '^[a-zA-Z0-9]+_[a-zA-Z0-9]+_[a-zA-Z0-9]+_[0-9][0-9][0-9][0-9]_[0-9QY][0-9]$'
@@ -97,7 +97,7 @@ html = requests.get(url, headers=headers)
 soup = BeautifulSoup(html.text, 'lxml')
 
 #### SCRAPE DATA
-print soup
+
 blocks = soup.find_all('h3', text=re.compile('Financial Year'))
 for block in blocks:
     links = block.find_next('ul')
